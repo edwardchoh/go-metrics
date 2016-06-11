@@ -25,6 +25,9 @@ type Registry interface {
 	// Call the given function for each registered metric.
 	Each(func(string, interface{}))
 
+	// Call the given function for each registered metric and clear all registered metrics.
+	EachAndClear(func(string, interface{}))
+
 	// Get the metric by the given name or nil if none is registered.
 	Get(string) interface{}
 
@@ -61,6 +64,13 @@ func NewRegistry() Registry {
 // Call the given function for each registered metric.
 func (r *StandardRegistry) Each(f func(string, interface{})) {
 	for name, i := range r.registered() {
+		f(name, i)
+	}
+}
+
+// Call the given function for each registered metric and clear all registered metrics.
+func (r *StandardRegistry) EachAndClear(f func(string, interface{})) {
+	for name, i := range r.registeredAndClear() {
 		f(name, i)
 	}
 }
@@ -119,7 +129,7 @@ func (r *StandardRegistry) Unregister(name string) {
 func (r *StandardRegistry) UnregisterAll() {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	for name, _ := range r.metrics {
+	for name := range r.metrics {
 		delete(r.metrics, name)
 	}
 }
@@ -145,6 +155,14 @@ func (r *StandardRegistry) registered() map[string]interface{} {
 	return metrics
 }
 
+func (r *StandardRegistry) registeredAndClear() map[string]interface{} {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	metrics := r.metrics
+	r.metrics = make(map[string]interface{})
+	return metrics
+}
+
 type PrefixedRegistry struct {
 	underlying Registry
 	prefix     string
@@ -167,6 +185,11 @@ func NewPrefixedChildRegistry(parent Registry, prefix string) Registry {
 // Call the given function for each registered metric.
 func (r *PrefixedRegistry) Each(fn func(string, interface{})) {
 	r.underlying.Each(fn)
+}
+
+// Call the given function for each registered metric and clear all registered metrics.
+func (r *PrefixedRegistry) EachAndClear(fn func(string, interface{})) {
+	r.underlying.EachAndClear(fn)
 }
 
 // Get the metric by the given name or nil if none is registered.
@@ -209,6 +232,11 @@ var DefaultRegistry Registry = NewRegistry()
 // Call the given function for each registered metric.
 func Each(f func(string, interface{})) {
 	DefaultRegistry.Each(f)
+}
+
+// Call the given function for each registered metric and clear all registered metrics.
+func EachAndClear(f func(string, interface{})) {
+	DefaultRegistry.EachAndClear(f)
 }
 
 // Get the metric by the given name or nil if none is registered.
