@@ -25,7 +25,7 @@ type Registry interface {
 	// Call the given function for each registered metric.
 	Each(func(string, interface{}))
 
-	// Call the given function for each registered metric and clear all registered metrics.
+	// Call the given function for each registered metric and unregisters all registered metrics.
 	EachAndUnregister(func(string, interface{}))
 
 	// Get the metric by the given name or nil if none is registered.
@@ -68,9 +68,9 @@ func (r *StandardRegistry) Each(f func(string, interface{})) {
 	}
 }
 
-// Call the given function for each registered metric and clear all registered metrics.
+// Call the given function for each registered metric and unregisters all registered metrics.
 func (r *StandardRegistry) EachAndUnregister(f func(string, interface{})) {
-	for name, i := range r.registeredAndClear() {
+	for name, i := range r.registeredAndUnregisters() {
 		f(name, i)
 	}
 }
@@ -155,7 +155,7 @@ func (r *StandardRegistry) registered() map[string]interface{} {
 	return metrics
 }
 
-func (r *StandardRegistry) registeredAndClear() map[string]interface{} {
+func (r *StandardRegistry) registeredAndUnregisters() map[string]interface{} {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	metrics := r.metrics
@@ -187,7 +187,7 @@ func (r *PrefixedRegistry) Each(fn func(string, interface{})) {
 	r.underlying.Each(fn)
 }
 
-// Call the given function for each registered metric and clear all registered metrics.
+// Call the given function for each registered metric and unregisters all registered metrics.
 func (r *PrefixedRegistry) EachAndUnregister(fn func(string, interface{})) {
 	r.underlying.EachAndUnregister(fn)
 }
@@ -234,7 +234,7 @@ func Each(f func(string, interface{})) {
 	DefaultRegistry.Each(f)
 }
 
-// Call the given function for each registered metric and clear all registered metrics.
+// Call the given function for each registered metric and unregisters all registered metrics.
 func EachAndUnregister(f func(string, interface{})) {
 	DefaultRegistry.EachAndUnregister(f)
 }
