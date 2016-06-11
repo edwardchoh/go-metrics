@@ -10,7 +10,7 @@ func Log(r Registry, freq time.Duration, l *log.Logger) {
 }
 
 // As Log(), but unregisters all metrics as well (threadsafe).
-func LogAndClear(r Registry, freq time.Duration, l *log.Logger) {
+func LogAndUnregister(r Registry, freq time.Duration, l *log.Logger) {
 	logScaled(r, freq, time.Nanosecond, l, true)
 }
 
@@ -20,7 +20,7 @@ func LogScaled(r Registry, freq time.Duration, scale time.Duration, l *log.Logge
 	logScaled(r, freq, scale, l, false)
 }
 
-func logScaled(r Registry, freq time.Duration, scale time.Duration, l *log.Logger, clear bool) {
+func logScaled(r Registry, freq time.Duration, scale time.Duration, l *log.Logger, unregister bool) {
 	du := float64(scale)
 	duSuffix := scale.String()[1:]
 
@@ -83,8 +83,8 @@ func logScaled(r Registry, freq time.Duration, scale time.Duration, l *log.Logge
 	}
 
 	for range time.Tick(freq) {
-		if clear {
-			r.EachAndClear(fn)
+		if unregister {
+			r.EachAndUnregister(fn)
 		} else {
 			r.Each(fn)
 		}
